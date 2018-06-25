@@ -19,7 +19,7 @@ from libdeda.extract_yd import ImgProcessingMixin
 
 class Cleaner(ImgProcessingMixin):
     _verbosity = 0
-    
+
     def __call__(self,output):
         im = cv2.imread(self.path)
         _, mask = self.processImage(im,workAtDpi=None,halftonesBlur=10,
@@ -27,8 +27,8 @@ class Cleaner(ImgProcessingMixin):
             paperColourThreshold=225)#233
         im[mask==255] = 255
         cv2.imwrite(output,im)
-        
-        
+
+
 class Main(object):
 
     def argparser(self):
@@ -40,11 +40,14 @@ class Main(object):
 
     def __init__(self):
         self.argparser()
-    
+
     def __call__(self):
         Cleaner(self.args.input)(self.args.output)
-        
+
+
+def main():
+    return Main()()
+
 
 if __name__ == "__main__":
-    Main()()
-    
+    main()

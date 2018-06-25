@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 """
 Copyright 2018 Timo Richter
 
@@ -22,9 +22,9 @@ class Main(object):
         parser.add_argument("file", type=str, help='Path to Input File')
         parser.add_argument("-m",'--mask', type=str,
             help='If file arg is monochrome mask of dots, specify inked area mask')
-        parser.add_argument("-d",'--dpi', default=0, type=int, 
+        parser.add_argument("-d",'--dpi', default=0, type=int,
             help='Input image dpi')
-        #parser.add_argument("-p",'--pattern', default=None, type=int, 
+        #parser.add_argument("-p",'--pattern', default=None, type=int,
         #    help='Assume pattern')
         parser.add_argument("-o",'--only-detect', default=False,
             action='store_true', help='Only detect pattern and exit')
@@ -33,7 +33,7 @@ class Main(object):
 
     def __init__(self):
         self.argparser()
-    
+
     def __call__(self):
         try:
           pp = PrintParser(self.args.file,ydxArgs=dict(mask=self.args.mask,
@@ -41,8 +41,8 @@ class Main(object):
               verbose=self.args.verbose)
         except YD_Parsing_Error as e: pattern = None
         else: pattern = pp.pattern
-        
-        if pattern is None: 
+
+        if pattern is None:
                 print("No tracking dot pattern detected.")
                 return
         print("Detected pattern %d"%pp.pattern)
@@ -73,7 +73,9 @@ class Main(object):
                     pp.validMatrices.count(tdm),str(tdm.decode())))
 
 
+def main():
+    return Main()()
+
+
 if __name__ == "__main__":
-    Main()()
-    
-    
+    main()

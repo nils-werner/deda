@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 '''
 Apply the anonymisation mask created by anonmask_create to a page for printing
 
@@ -20,7 +20,7 @@ from libdeda.cmyk_to_rgb import BLACK, YELLOW, CYAN
 DOTRADIUS = 0.004 #in
 
 PS_PLACE_EPS = """
-/placeEPS 
+/placeEPS
 {
     userdict begin
 
@@ -30,8 +30,8 @@ PS_PLACE_EPS = """
     /showpage       {}              def
 
     initgraphics
-    translate 
-    dup scale 
+    translate
+    dup scale
     run
 
     count           __os_count sub  { pop } repeat
@@ -59,13 +59,13 @@ class Main(object):
 
     def __init__(self):
         self.argparser()
-    
+
     def __call__(self):
         A4 = (8.3, 11.7)
         OUTFILE = "masked.ps"
 
         dpi = 72
-        with open(self.args.mask) as fp: 
+        with open(self.args.mask) as fp:
             d = json.load(fp)
         proto = d["proto"]
         hps = d["hps"]
@@ -74,10 +74,10 @@ class Main(object):
         yOffset = self.args.yoffset or d["y_offset"]
         print("TDM offset: %f, %f"%(xOffset, yOffset))
         proto = [(xDot+xOffset,yDot+yOffset) for xDot, yDot in proto]
-        
+
         dotRadius = self.args.dotradius
         print("Dot radius: %f"%dotRadius)
-        
+
         ps = PSFile(OUTFILE, margin=0, paper="A4")
         ps.append(PS_PLACE_EPS)
         ps.append("%d %d %d setrgbcolor"%YELLOW)
@@ -98,6 +98,10 @@ class Main(object):
         ps.close()
         print("Document written to '%s'"%OUTFILE)
 
+
+def main():
+    return Main()()
+
+
 if __name__ == "__main__":
-    Main()()
-    
+    main()

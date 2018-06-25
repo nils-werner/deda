@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 '''
-Creates an anonymisation mask for tracking dots. 
+Creates an anonymisation mask for tracking dots.
 This needs to read a scan of the printed calibration page.
 
 Copyright 2018 Timo Richter
@@ -23,7 +23,7 @@ try:
 except ImportError:
     from PIL import Image
 from libdeda.cmyk_to_rgb import CYAN, MAGENTA, BLACK
-    
+
 
 TESTPAGE_SIZE = (8.3, 11.7) # A4, inches
 EDGE_COLOUR = MAGENTA
@@ -45,18 +45,18 @@ class Main(object):
 
     def __init__(self):
         self.argparser()
-    
+
     def __call__(self):
-        if self.args.write: 
+        if self.args.write:
             TestpageCreator(self.testpage)()
         if self.args.read:
             TestpageParser(self.args.read)()
-        
+
 
 class TestpageCreator(PSFile):
     dpi=72
     imdpi=600
-    
+
     def __init__(self,filepath):
         w = TESTPAGE_SIZE[0]*self.dpi
         h = TESTPAGE_SIZE[1]*self.dpi
@@ -64,7 +64,7 @@ class TestpageCreator(PSFile):
         self.im = np.zeros((int(TESTPAGE_SIZE[1]*self.imdpi),
             int(TESTPAGE_SIZE[0]*self.imdpi),3))
         self.im[:] = 255
-        
+
     def __call__(self):
         #self.append("72 %d div dup scale"%self.dpi)
         self.append("%d %d %d setrgbcolor"%EDGE_COLOUR)
@@ -76,7 +76,7 @@ class TestpageCreator(PSFile):
             for y in [0+EDGE_MARGIN*self.imdpi, (TESTPAGE_SIZE[1]-EDGE_MARGIN)*self.imdpi]:
                 self.im[int(y-MARKER_SIZE*self.imdpi)+1:int(y)+1,
                     int(x):int(x+MARKER_SIZE*self.imdpi)] = tuple(reversed(EDGE_COLOUR))
-        
+
         self.append("%d %d %d setrgbcolor"%CYAN)
         self.append("%f %f %f %f rectfill"%
             ((EDGE_MARGIN+MARKER_SIZE)*self.dpi,EDGE_MARGIN*self.dpi,
@@ -86,7 +86,7 @@ class TestpageCreator(PSFile):
         self.close()
         cv2.imwrite("testpage.png",self.im)
         #TODO print me
-        
+
 
 class TestpageParser(object):
     """
@@ -118,18 +118,18 @@ class TestpageParser(object):
         print("Writing mask data to '%s'."%output)
         with open(output,"w") as f:
             json.dump(maskdata, f)
-        
+
     @property
     def centre(self):
         return (self.im.shape[0]/2, self.im.shape[1]/2)
-            
+
     def _selectColour(self,colour):
         edgeHue = int(rgb_to_hsv(*colour)[0]*180)
         TOLERANCE = 30
         edgeHue1 = (edgeHue-TOLERANCE)%181
         edgeHue2 = (edgeHue+TOLERANCE)%181
         hsv = cv2.cvtColor(self.im, cv2.COLOR_BGR2HSV)
-        if edgeHue2 < edgeHue1: 
+        if edgeHue2 < edgeHue1:
             raise Exception("Implementation change necessary: "
                 +"Trying to select range that includes 180..0.")
         im = cv2.inRange(hsv, (edgeHue1,100,100),(edgeHue2,255,255))
@@ -144,7 +144,7 @@ class TestpageParser(object):
                 *(np.max(contour[:,1])-np.min(contour[:,1]))
             for e in contours for contour in [e[:,0]]])/self.dpi**2
         return contours[(area > MARKER_SIZE**2/2)*(area < MARKER_SIZE**2*2)]
-    
+
     def restoreOrientation(self):
         contours = self._findContours(CYAN)
         cEdges = np.array([c[0] for e in contours for c in e])
@@ -153,10 +153,10 @@ class TestpageParser(object):
         angle = angles[dot[0]>self.centre[0]][dot[1]>self.centre[1]]
         print("Orientation correction: rotating input by %d°"%(angle*90))
         self.im = np.rot90(self.im, angle)
-    
+
     def _getMagentaMarkers(self):
         contours = self._findContours(EDGE_COLOUR)
-        if len(contours) == 0: 
+        if len(contours) == 0:
                 raise Exception("No contour found for colour EDGE_COLOUR")
         cEdges = np.array([c[0] for e in contours for c in e])
         #"""
@@ -172,13 +172,13 @@ class TestpageParser(object):
         edges = [getEdge(c1,c2) for c1 in comparators for c2 in comparators]
         inputPoints = np.array(edges,dtype=np.float32)
         return inputPoints
-        
+
     def restorePerspective(self):
         _,_, angle = cv2.minAreaRect(self._getMagentaMarkers())
         angle = angle%90 if angle%90<45 else angle%90-90
         print("Skew correction: rotating by %+f°"%angle)
         self.im = rotateImage(self.im, angle)
-        
+
         inputPoints = self._getMagentaMarkers()
         outputPoints = np.array([(x*self.dpi, y*self.dpi) for x,y in [
             (0+EDGE_MARGIN, 0+EDGE_MARGIN),
@@ -207,7 +207,7 @@ class TestpageParser(object):
         testpageSizePx = (
             int(TESTPAGE_SIZE[0]*self.dpi), int(TESTPAGE_SIZE[1]*self.dpi))
         self.im = cv2.warpPerspective(self.im,l,testpageSizePx)
-        
+
     def createMask(self):
         """
         Create a mask prototype
@@ -218,7 +218,7 @@ class TestpageParser(object):
         pp = PrintParser(self.im,ydxArgs=dict(inputDpi=self.dpi))
         tdms = list(pp.getAllValidTdms())
         print("\t%d valid matrices"%len(tdms))
-        
+
         # select tdm
         #pp.tdm = random.choice(tdms)
         width = pp.yd.im.shape[1]*pp.yd.imgDpi
@@ -228,7 +228,7 @@ class TestpageParser(object):
             tdms[np.argmin(
                 [abs(e1-tdm.atX)+abs(e2-tdm.atY) for tdm in tdms]
             )] for e1, e2 in edges]
-        
+
         #m = pp.tdm.undoTransformation()
         m = pp.tdm.createMask().undoTransformation()
         print("\tTracking dots pattern found:")
@@ -249,24 +249,24 @@ class TestpageParser(object):
             im[int(y*self.dpi),int(x*self.dpi)] = 255
         cv2.imwrite("perspective_layer.png", im)
         """
-        
+
         # create mask
         tdmCorrectionx = pp.tdm.trans["x"]*di
         tdmCorrectiony = pp.tdm.trans["y"]*dj
         dots_proto = [((x*di+tdmCorrectionx), (y*dj+tdmCorrectiony))
-            for x in range(m.shape[0]) for y in range(m.shape[1]) 
+            for x in range(m.shape[0]) for y in range(m.shape[1])
             if m[x,y] == 1]
         """
         dots_proto = [
             ((x*di+pp.tdm.atX/self.dpi),(y*dj+pp.tdm.atY/self.dpi))
-            for x in range(m.shape[0]) for y in range(m.shape[1]) 
+            for x in range(m.shape[0]) for y in range(m.shape[1])
             if m[x,y] == 1]
         """
         # FIXME: dont use tdm.trans. instead internal tdm function,
         # consider rotation/flips
         hps2 = hps/2 if pp.pattern in (1,5,6) else hps
         vps2 = vps/2 if pp.pattern in (1,5,6) else vps
-        
+
         func = np.median #np.median #np.average
         xOffsets = [(tdm.atX/pp.yd.imgDpi-tdm.trans["x"]*di)%hps2
             for tdm in tdms]
@@ -277,11 +277,11 @@ class TestpageParser(object):
         yOffsets = [e if e>vps2/2 else e+vps2 for e in yOffsets]
         yOffset = func(yOffsets)%vps2
         #print(hps,vps)
-        #print((np.array(xOffsets)%hps2).tolist(), 
+        #print((np.array(xOffsets)%hps2).tolist(),
         #    (np.array(yOffsets)%vps2).tolist())
         #xOffset = (pp.tdm.atX/pp.yd.imgDpi-pp.tdm.trans["x"]*di)%hps
         #yOffset = (pp.tdm.atY/pp.yd.imgDpi-pp.tdm.trans["y"]*dj)%vps
-        
+
         #print(xOffset,yOffset)
         #xOffset, yOffset = 0.619892%hps, 0.5479907%vps #ricoh
         #xOffset, yOffset = 0.3, 0.233333 #ricoh
@@ -290,8 +290,11 @@ class TestpageParser(object):
 
         return dict(proto=dots_proto, hps=hps, vps=vps, x_offset=xOffset,
             y_offset=yOffset)
-        
+
+
+def main():
+    return Main()()
+
 
 if __name__ == "__main__":
-    Main()()
-    
+    main()

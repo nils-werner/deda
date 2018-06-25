@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 '''
 This module helps extracting a yellow dots matrix from a scanned print.
 See classes YellowDotsXposer and YellowDotsXposerBasic.
@@ -25,7 +25,7 @@ try:
 except ImportError: pass
 if sys.version_info[0] >= 3:
     xrange = range
-    
+
 
 WORK_AT_DPI = 300 #300 # resize input to
 HALFTONES_BLUR = 20 #70 # blur factor to get rid of halftones
@@ -51,15 +51,15 @@ class Main(object):
         parser.add_argument("file", type=str, help='Path to Input File')
         parser.add_argument("-m",'--mask', type=str,
             help='If file arg is monochrome mask of dots, specify inked area mask')
-        parser.add_argument("-e",'--expose', default=False, 
+        parser.add_argument("-e",'--expose', default=False,
             action='store_true', help='Only output exposed dots')
-        parser.add_argument('--no-crop', default=False, 
+        parser.add_argument('--no-crop', default=False,
             action='store_true', help='Do not crop the input')
         parser.add_argument("-c",'--code', type=str,
             help='Translation code')
-        parser.add_argument("-d",'--dpi', default=0, type=int, 
+        parser.add_argument("-d",'--dpi', default=0, type=int,
             help='Input image dpi')
-        parser.add_argument('--debug', default=False, 
+        parser.add_argument('--debug', default=False,
             action='store_true', help='Write images while processing to yd*.png')
         parser.add_argument("-v",'--verbose', action='count', default=0, help='Fehlerausgabe')
         #parser.add_argument("-o",'--destination', type=str, default=".", help='Example Parameter')
@@ -67,7 +67,7 @@ class Main(object):
 
     def __init__(self):
         self.argparser()
-    
+
     @classmethod
     def _parseTransCode(self, code):
         types = [int,int,float,float]
@@ -78,7 +78,7 @@ class Main(object):
                 transCode = tuple([types[i](e) if e!='?' else None for i,e in enumerate(code.replace(" ","").split(","))])
             except Exception as e: raise Exception("%s. Argument -c must be %s."%(repr(e),repr(types)))
         return transCode
-    
+
     def __call__(self):
         transCode = self._parseTransCode(self.args.code)
         yd = YellowDotsXposer(
@@ -88,20 +88,20 @@ class Main(object):
             imDebugOutput=self.args.debug, onlyExpose=self.args.expose,
             noCrop=self.args.no_crop)
         #print(yd.matrix)
-        
+
 
 class PrintingClass(object):
 
     def __init__(self, verbose=0):
         self._verbosity = verbose
-    
+
     def _print(self, verbosity, *args, **xargs):
         if not self._verbosity>=verbosity: return
         sys.stderr.write(*args,**xargs)
         sys.stderr.flush()
-        
 
-class Common(PrintingClass): 
+
+class Common(PrintingClass):
 
     def _distances(self,l):
         """
@@ -115,10 +115,10 @@ class Common(PrintingClass):
         e = cls(*args)
         e.yd = self
         raise e
-        
+
 
 class CommonImageFunctions(Common):
-    
+
     def __init__(self, path, imDebugOutput=False, inputDpi=None):
         #super(CommonImageFunctions,self).__init__()
         self.path = path
@@ -147,7 +147,7 @@ class CommonImageFunctions(Common):
         out = "yd_%s_%s.png"%(orig,filename)
         self._print(0,"Writing %s"%out)
         cv2.imwrite(out,im)
-        
+
     def _show(self, im):
         cv2.imshow('cv2 image',im)
         cv2.waitKey(0)
@@ -155,7 +155,7 @@ class CommonImageFunctions(Common):
 
 
 class RotationMixin(CommonImageFunctions,Common):
-        
+
     def getAngle(self, dots):
         """ returns current rotation of @dots in degrees """
         dots = dots[:500]
@@ -202,7 +202,7 @@ class RotationMixin(CommonImageFunctions,Common):
         r = math.degrees(math.atan2(y2-y1,x2-x1))
         if r < 0: return r+360
         return r
-        
+
 
 class ImgProcessingMixin(RotationMixin,CommonImageFunctions,Common):
 
@@ -225,7 +225,7 @@ class ImgProcessingMixin(RotationMixin,CommonImageFunctions,Common):
             #self._show(im)
             self._imwrite("dots",im)
             return im, mask
-    
+
     def getDots(self, im):
         #return np.transpose(np.array(np.nonzero(im)))
         #im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -245,11 +245,11 @@ class ImgProcessingMixin(RotationMixin,CommonImageFunctions,Common):
             Y.append(y)
         dots = np.transpose(np.array([X,Y]))
         return dots
-        
+
     def crop(self, dots, h, w):
-        """ separate the page into big squares and 
+        """ separate the page into big squares and
         choose the square with the most dots
-        
+
         @h: acual image height
         """
         self._print(2,"Cropping... ")
@@ -257,13 +257,13 @@ class ImgProcessingMixin(RotationMixin,CommonImageFunctions,Common):
         if not ANALYSING_SQUARE_WIDTH:
             self._print(2,"No cropping. ANALYSING_SQUARE_WIDTH not set.\n")
             return 0,w,0,h
-        if w <= sqW and h <= sqW: 
+        if w <= sqW and h <= sqW:
             self._print(3,"No cropping. Image is too small.\n")
             return 0, w, 0, h
         squaresX = int(math.ceil(w/sqW))
         #sqW = float(w)/squaresX
         squaresY = int(math.ceil(h/sqW))
-        #sCoords = [(x*sqW,y*sqW) 
+        #sCoords = [(x*sqW,y*sqW)
         #    for x in xrange(squaresX) for y in xrange(squaresY)]
         #sCount = [0]*len(sCoords)
         def calcSquares(deltaX,deltaY):
@@ -283,7 +283,7 @@ class ImgProcessingMixin(RotationMixin,CommonImageFunctions,Common):
         amount, cropX, cropY, squareX, squareY = a if a[0]>b[0] else b
         self._print(2,"at square %dx%d of %dx%d.\n"%(squareX+1,squareY+1,squaresX,squaresY))
         return int(cropX), int(cropX+sqW), int(cropY), int(cropY+sqW)
-        
+
     def _resize(self,im,dpi):
         """ Resizes an image to @dpi dpi and return new cv2 image. """
         if dpi == self.imgDpi: return im
@@ -296,7 +296,7 @@ class ImgProcessingMixin(RotationMixin,CommonImageFunctions,Common):
         im = cv2.resize(im,newSize,interpolation=cv2.INTER_CUBIC)
         self._imwrite("resize",im)
         return im
-    
+
     def _makeMask(self,im,blur,threshold):
         self._print(2,"blurring... ")
         blur = int(round(blur))
@@ -313,13 +313,13 @@ class ImgProcessingMixin(RotationMixin,CommonImageFunctions,Common):
         # method joost
         #im2 = np.array(~((np.minimum(im[:,:,2],im[:,:,1])-im[:,:,0]<20) \
         #    * (im[:,:,2]>240) * (im[:,:,1]>240)),dtype=np.uint8)*255
-        
+
         hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
         im = cv2.inRange(hsv, *ydColourRange)
         #kernel = np.ones((6,6),np.uint8)
         #im = cv2.morphologyEx(im, cv2.MORPH_CLOSE, kernel)
         return im
-    
+
 
 class RasterMixin(Common):
 
@@ -340,7 +340,7 @@ class RasterMixin(Common):
         #distances = [abs(dots[i,axis]-dots[j,axis]) for i,j in enumerate(neighbours) if dots[i,axis]!=dots[j,axis]]
         distances = np.abs(dots[:,axis]-dots[neighbours,axis])
         distances = distances[distances>0]
-        
+
         f = np.bincount(distances)
         #print(f[:15])
         #return np.argmax(f)
@@ -349,7 +349,7 @@ class RasterMixin(Common):
         #maxima = [m for m in maxima if np.argmax(f)%m==0]
         MIN_DOT_DISTANCE = 0.01 # inches
         minDist = int(MIN_DOT_DISTANCE*self.imgDpi)
-        if len(f[minDist:]) == 0: 
+        if len(f[minDist:]) == 0:
             self._raise(YDExtractingException,"Dot distances below minimum")
         maximum = np.argmax(f[minDist:])+minDist
         distance = maximum/2 if maximum/2.0 in maxima and float(maximum)/self.imgDpi==0.04 else maximum # because of Ricoh's marking dot
@@ -359,13 +359,13 @@ class RasterMixin(Common):
         maxima = maxima[maxima_vals>threshold]
         maxima = [x for x in maxima if x<2 or x>len(f)-1-2 or not(f[x-2]<f[x] and f[x+2]>f[x] or f[x-2]>f[x] and f[x+2]<f[x])] #exclude hills on the way to maximum  #TODO: schreiben removed
         # a=f[x-2]-f[x]; b=f[x+2]-f[x]; a<0 and b>0 or a>0 and b<0 gdw a*b<0
-        # pitch1 = 
+        # pitch1 =
         distance = maxima[1]
         """
         return distance
 
         """
-        # calculate dmin from distribution of $distances 
+        # calculate dmin from distribution of $distances
         # distances for each dot to its closest one
         distances = np.min(distM, axis=0)
         del distM
@@ -407,12 +407,12 @@ class RasterMixin(Common):
         self._print(2,"Output dimensions: %d x %d "%matrix.shape)
         self._print(2,"Writing matrix...")
         self._print(4,"X-Separators: %d, %d, %d, ..."%(sepX0,sepX0+distanceX,sepX0+2*distanceX))
-        
+
         for xdot,ydot in dots:
             xcell = int(math.floor(float(xdot+distanceX-sepX0)/distanceX))
             ycell = int(math.floor(float(ydot+distanceY-sepY0)/distanceY))
             matrix[xcell,ycell] = 1 #if inked[ydot,xdot] != 0 else .5
-        
+
         matrixInked = cv2.resize(inked.T,(matrix.shape[1],matrix.shape[0]))
         matrix[matrixInked<.5] = .5
         """
@@ -424,7 +424,7 @@ class RasterMixin(Common):
                 else .5)
         """
         self._print(2,"\n")
-        
+
         if self._verbosity>=5: # plot
             matrixplt=np.array([(x,y) for x in xrange(matrix.shape[0]) for y in xrange(matrix.shape[1]) if matrix[x,y]==1])
             matrixpltinked=np.array([(x,y) for x in xrange(matrix.shape[0]) for y in xrange(matrix.shape[1]) if matrix[x,y]==.5])
@@ -451,7 +451,7 @@ class MatrixTools(object):
         rx=xrange(x1,x2+1)#[-1,0,1] # xrange(-2,3)
         ry=xrange(y1,y2+1)
         return [(i,j,np.roll(m,(i,j),(0,1))) for i in rx for j in ry]
-        
+
     @classmethod
     def _shifted(self, m, mReference, *args):
         #return m
@@ -463,9 +463,9 @@ class MatrixTools(object):
 
     @classmethod
     def matrixSubsets(self, m, len0,len1):
-        """ 
+        """
         Returns a subset of input matrix @m where each subset
-        has the dimensions @len0 x @len1 and all party of @m are covered. 
+        has the dimensions @len0 x @len1 and all party of @m are covered.
         @returns: [(x_coord_in_m, y_coord_in_m, m_crop)]
         """
         mList = [
@@ -474,10 +474,10 @@ class MatrixTools(object):
             for y0 in [y*len1 for y in range(int(math.floor(m.shape[1]/len1)))]+[m.shape[1]-len1]
         ]
         return mList
-        
+
 
 class RepetitionDetectorMixin(Common,MatrixTools):
-    
+
     @classmethod
     def _arrayDiff(self, a1, a2):
         #relative distribution of ones in a1:
@@ -504,7 +504,7 @@ class RepetitionDetectorMixin(Common,MatrixTools):
         remove = ones<=0
         distM[:,remove] = np.nan
         distM[remove,:] = np.nan
-        
+
         div=50.0
         f = np.bincount(np.array((distM[np.isnan(distM)==False]*div).round(),dtype=np.int32).flat)
         minima = argrelmin(f.argsort().argsort())[0]
@@ -536,7 +536,7 @@ class RepetitionDetectorMixin(Common,MatrixTools):
             return -1
         period = np.argmax(distFreqWindow)+MIN_MATRIX_PATTERN_LENGTH
         return period
-    
+
     def _splitFullMatrix(self, fullMatrix, xLen, yLen, sort=True):
         mList = [(x,y,m) for x,y,m in MatrixTools.matrixSubsets(fullMatrix,xLen,yLen)
             if np.sum(m==1) > 0]
@@ -546,11 +546,11 @@ class RepetitionDetectorMixin(Common,MatrixTools):
             sortfunc = lambda e: np.sum(e[-1])==1
             mList = list(sorted(mList, key=sortfunc, reverse=True))
         return mList
-        
+
     def overlap(self, matrices, prob1=0.5, considerRepetitions=9):
         mBase = matrices[0][-1]
         mList = matrices[:considerRepetitions]
-        mList = np.array([self._shifted(m,mBase,-2,2,-2,2) 
+        mList = np.array([self._shifted(m,mBase,-2,2,-2,2)
             for x,y,m in mList])
 
         m2 = np.zeros(mBase.shape)
@@ -570,12 +570,12 @@ class RepetitionDetectorMixin(Common,MatrixTools):
 class YDExtractingException(Exception): pass
 
 
-class TooManyDotsException(Exception): 
+class TooManyDotsException(Exception):
 
     def __init__(self, ydPerInch):
         super(TooManyDotsException,self).__init__("Too many dots found (%f yellow dots per inch). Verify your mask for inked areas or adjust MAX_AMOUNT_DOTS."%ydPerInch)
-        
-        
+
+
 class YellowDotsXposerBasic(
         RasterMixin,ImgProcessingMixin,RepetitionDetectorMixin):
 
@@ -636,7 +636,7 @@ class YellowDotsXposerBasic(
         self.ydPerInch = float(len(dots))/(im.shape[0]*im.shape[1]
             -printedPixels)*self.imgDpi**2 #TODO: schreiben
         self._print(2,"%f yellow dots per inch\n"%self.ydPerInch)
-        if self.ydPerInch < MIN_AMOUNT_DOTS or len(dots)<3: 
+        if self.ydPerInch < MIN_AMOUNT_DOTS or len(dots)<3:
             self._print(0,("No tracking dot pattern found :-) "
                 +"(%f yellow dots per inch)\n")%self.ydPerInch)
             self.hasDots = False
@@ -672,13 +672,13 @@ class YellowDotsXposerBasic(
                 self._imwrite("crop_im",self.im)
                 self._imwrite("crop_inked",self.inked)
                 self.dots = self.getDots(self.im)
-                #dots = np.array([(y,x) for y,x in dots 
+                #dots = np.array([(y,x) for y,x in dots
                 #    if x>=squareX and x<squareX+sqW
                 #    and y>=squareY and y<squareY+sqW
                 #    ])
         #plt.scatter(dots[:,0],dots[:,1]*-1);plt.show()
         return self.dots
-        
+
     def grid(self, dx=None, dy=None):
         """
         Make a grid and set self.fullmatrix.
@@ -691,7 +691,7 @@ class YellowDotsXposerBasic(
         self.gridDeltax, self.gridDeltay, self.fullMatrix = self._grid(
             self.dots,self.inked,dx*self.imgDpi,dy*self.imgDpi)
         return self.gridDeltax, self.gridDeltay, self.fullMatrix
-        
+
     def getDotDistances(self):
         """ Calculate dx,dy automatically and return them in inches """
         self._print(2,"Find dot distance... ")
@@ -699,19 +699,19 @@ class YellowDotsXposerBasic(
         distY = self._getDotDistance(self.dots,1)/self.imgDpi
         self._print(2,"%f, %f\n"%(distX,distY))
         return distX,distY
-            
+
     def getPatternShape(self):
         """
         Calculate the unique matrix' size automatically.
-        Returns a tuple (n_x,n_y) where n_x and n_y are amounts of 
-        matrix cells. 
+        Returns a tuple (n_x,n_y) where n_x and n_y are amounts of
+        matrix cells.
         """
         self._print(2,"Finding pattern...\n")
         nx = self.findPatternLen(self.fullMatrix)
         ny = self.findPatternLen(self.fullMatrix.T)
         self._print(2,"Matrix dimensions: %d x %d\n"%(nx,ny))
         return nx,ny
-    
+
     def separateMatrixRepetitions(self, nx=None, ny=None):
         if None in (nx,ny):
             nx,ny = self.getPatternShape()
@@ -719,9 +719,9 @@ class YellowDotsXposerBasic(
         return self.matrices
 
     def getAllFullMatrices(self,dx,dy,cutLength=ANALYSING_SQUARE_WIDTH):
-        """ 
-        Returns list fullMatrices for all possible crops. 
-        See also doc for getAllMatrices() 
+        """
+        Returns list fullMatrices for all possible crops.
+        See also doc for getAllMatrices()
         @returns: [(crop_x, crop_y, fullMatrix)]
         """
         w = float(cutLength*self.imgDpi)
@@ -740,7 +740,7 @@ class YellowDotsXposerBasic(
                 mask = (dots>=(x1,y1)).all(axis=1)*(dots<(x2,y2)).all(axis=1)
                 if not np.any(mask): continue
                 self.dots = dots[mask]-(x1,y1)
-                #self.dots = np.array([(x-x1,y-y1) for x,y in dots 
+                #self.dots = np.array([(x-x1,y-y1) for x,y in dots
                 #    if x>=x1 and x<x2 and y>=y1 and y<y2])
                 #self.cleanDotPositions(crop=False) #optional
                 deltax, deltay, fullMatrix = self.grid(dx,dy)
@@ -749,7 +749,7 @@ class YellowDotsXposerBasic(
         self.inked = inked
         self.dots = dots
         return matrices
-    
+
     def getAllMatrices(self,nx,ny,dx,dy,**xargs):
         """
         Does cropping, puts the grid, separates the matrices and returns the
@@ -766,7 +766,7 @@ class YellowDotsXposerBasic(
         mList = [
             (xCrop+xCell*dx*self.imgDpi,yCrop+yCell*dy*self.imgDpi,m)
             for xCrop,yCrop,fullMatrix in fullMatrices
-            for xCell,yCell,m in 
+            for xCell,yCell,m in
                 self._splitFullMatrix(fullMatrix,nx,ny,sort=False)]
         _,idx = np.unique([m for x,y,m in mList],axis=0,return_index=True)
         mList = np.array(mList,dtype=np.object)[idx].tolist()
@@ -776,7 +776,7 @@ class YellowDotsXposerBasic(
         mList = list(sorted(mList, key=sortfunc, reverse=True))
         self.matrices = mList
         return mList
-    
+
     def __str__(self):
         if not self.hasDots: return "<Page without yellow dots>"
         return matrix2str(self.matrix)
@@ -790,7 +790,7 @@ YDX = YellowDotsXposerBasic
 
 class YellowDotsXposer(YellowDotsXposerBasic):
 
-    def __init__(self, path, transCode=(None,None,None,None), 
+    def __init__(self, path, transCode=(None,None,None,None),
             inputDpi=None, imDebugOutput=False, inputIsMask=False,
             onlyPrintRotation=False, noRotation=False, noCrop=False,
             onlyExpose=False, inkedPath=None, verbose=0, *args, **xargs):
@@ -799,7 +799,7 @@ class YellowDotsXposer(YellowDotsXposerBasic):
         @path: str, input file
         @inputDpi: float, DPI of input image. None for auto detection
         @transCode: tuple (int matrix width, int matrix height,
-            float dot distance X, float dot distance Y) in inches. 
+            float dot distance X, float dot distance Y) in inches.
             Default: auto detection
         @inputIsMask: bool, True if input is a monochrome mask
         @inkedPath: str, path to inked mask or None for auto/none.
@@ -837,11 +837,11 @@ class YellowDotsXposer(YellowDotsXposerBasic):
         self.matrices = self._splitFullMatrix(self.fullMatrix,xLen,yLen)
         self.matrix = self.overlap(self.matrices)
         self._print(1,str(self))
-        
+
         #matrix=self.matrix;matrixplt=np.array([(x,y) for x in xrange(matrix.shape[0]) for y in xrange(matrix.shape[1]) if matrix[x,y]==1]);plt.scatter(matrixplt[:,0],matrixplt[:,1]*-1);plt.show()
         #import ipdb;ipdb.set_trace()
-        
-        
+
+
 def matrix2str(matrix):
         """ Create yellow dots string representation """
         out = "\n\n"
@@ -857,7 +857,7 @@ def matrix2str(matrix):
         return out
 
 def array2str(a):
-    return "".join([str(int(digit)) for digit in a.flatten()])        
+    return "".join([str(int(digit)) for digit in a.flatten()])
 
 def rotateImage(image, angle):
     """ source: https://stackoverflow.com/questions/9041681/opencv-python-rotate-image-by-x-degrees-around-specific-point """
@@ -866,8 +866,11 @@ def rotateImage(image, angle):
     rot_mat = cv2.getRotationMatrix2D(center,angle,1.0)
     new_image = cv2.warpAffine(image, rot_mat, (col,row))
     return new_image
-  
+
+
+def main():
+    return Main()()
+
 
 if __name__ == "__main__":
-    Main()()
-
+    main()

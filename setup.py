@@ -15,7 +15,7 @@ if __name__ == "__main__":
         author_email='timo.richter@tu-dresden.de',
         url='https://github.com/dfd-tud/deda',
 
-        license='GPL3',
+        license='GPL3+',
 
         packages=setuptools.find_packages(),
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         classifiers=[
             'Environment :: Console',
             'Operating System :: OS Independent',
-            'License :: OSI Approved :: MIT License',
+            'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
             'Topic :: Utilities',
             'Topic :: Printing',
             'Topic :: Security',
